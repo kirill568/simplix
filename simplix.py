@@ -1,10 +1,12 @@
 import numpy as np
+from fractions import Fraction
+from pandas import DataFrame
 
 def recalcMatrix(matrix, solvElement, solvRow, solvColumn):
-    newMatrix = np.zeros((len(matrix), len(matrix[0])))
+    newMatrix = np.zeros((len(matrix), len(matrix[0])), dtype=Fraction).tolist()
 
     for j in range(len(matrix[solvRow])):
-        newMatrix[solvRow][j] = round(matrix[solvRow][j] / solvElement, 3)
+        newMatrix[solvRow][j] = matrix[solvRow][j] / solvElement
 
     for i in range(len(matrix)):
         if i == solvRow:
@@ -14,7 +16,7 @@ def recalcMatrix(matrix, solvElement, solvRow, solvColumn):
             if j == solvColumn:
                 continue
 
-            newMatrix[i][j] = round(((matrix[i][j] * solvElement) - (matrix[solvRow][j] * matrix[i][solvColumn])) / solvElement, 3)
+            newMatrix[i][j] = ((matrix[i][j] * solvElement) - (matrix[solvRow][j] * matrix[i][solvColumn])) / solvElement
     
     return newMatrix
             
@@ -82,8 +84,29 @@ def isHasOptimalSolution(matrix):
 
     return False
 
+def showMatrix(matrix, basis):
+    columns = []
+    for j in range(len(matrix[0])):
+        columns.append(f'x{j + 1}')
+
+    columns[-1] = "b"
+
+    df = DataFrame(matrix, index=basis, columns=columns)
+    print(df)
+
 def simplix(matrix):
-    newMatrix = matrix  
+    # convert elements to fractions and make basis column
+    newMatrix = np.zeros((len(matrix), len(matrix[0])), dtype=int).tolist()
+    startBasisIndex = len(matrix[0]) - len(matrix)
+    basis = []
+    for i in range(len(matrix)):
+        for j in range(len(matrix[i])):
+            newMatrix[i][j] = Fraction(matrix[i][j])
+
+        basis.append(f'x{startBasisIndex + i + 1}')
+
+    basis[-1] = "z"
+
     iter = 1
     while True:
         if isHasPossibleSolution(newMatrix):
@@ -98,12 +121,14 @@ def simplix(matrix):
 
         solvRow = getSolvRow(newMatrix, solvColumn)
         solvElement = newMatrix[solvRow][solvColumn]
+        basis[solvRow] = f'x{solvColumn + 1}'
         print("Разрешающий столбец:", solvColumn + 1)
         print("Разрешающая строка:", solvRow + 1)
         print("Разрешающий элемент:", solvElement)
 
         newMatrix = recalcMatrix(newMatrix, solvElement, solvRow, solvColumn)
-        print(newMatrix)           
+        print("Пересчитанная матрица:")
+        showMatrix(newMatrix, basis)
 
         iter += 1
         print("-----------------")
@@ -138,11 +163,11 @@ def simplix(matrix):
 # ])
 
 # simplix([
-#     [0, 1, 2/3, -1/3, 0, 0, 10/3],
-#     [1, 0, -1/3, 2/3, 0, 0, 1/3],
+#     [0, 1, '2/3', '-1/3', 0, 0, '10/3'],
+#     [1, 0, '-1/3', '2/3', 0, 0, '1/3'],
 #     [0, 0, -1, 1, 1, 0, -2],
-#     [0, 0, -2/3, 1/3, 0, 1, -4/3],
-#     [0, 0, 1/3, 4/3, 0, 0, 23/3]
+#     [0, 0, '-2/3', '1/3', 0, 1, '-4/3'],
+#     [0, 0, '1/3', '4/3', 0, 0, '23/3']
 # ])
 
 simplix([
